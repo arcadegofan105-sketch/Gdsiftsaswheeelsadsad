@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3001
 const BOT_TOKEN =
 	process.env.BOT_TOKEN || '8204738952:AAE5tWIrypF630TPMDugC4_68Wgog3aurlI'
 const WEB_APP_URL =
-  process.env.WEB_APP_URL || 'https://wheelsgifts.netlify.app'
+  process.env.WEB_APP_URL || 'https://wheelsgifts1.netlify.app/'
 const bot = new TelegramBot(BOT_TOKEN, { polling: true })
 
 console.log('✅ Telegram Bot запущен!')
@@ -684,4 +684,5 @@ app.listen(PORT, () => {
 	console.log(`🚀 Backend running on http://localhost:${PORT}`)
 	console.log(`🤖 Telegram Bot активен`)
 })
+
 

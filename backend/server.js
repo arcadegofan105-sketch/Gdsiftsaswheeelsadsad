@@ -528,9 +528,9 @@ app.post('/api/ton/deposit/create', async (req, res) => {
       payload,
       message: 'Отправьте TON на этот адрес (TonConnect) — комментарий уже встроен',
     })
-  } catch (error) {
-    console.error('Error creating deposit:', error)
-    res.status(500).json({ error: 'Ошибка создания депозита' })
+    } catch (error) {
+    console.error('❌ Error creating deposit:', error)
+    res.status(500).json({ error: error.message || 'Ошибка создания депозита' })
   }
 })
 
@@ -638,3 +638,4 @@ app.listen(PORT, () => {
   console.log(`🚀 Backend running on http://localhost:${PORT}`)
   console.log(`🤖 Telegram Bot ${bot ? 'активен' : 'отключён (нет BOT_TOKEN)'}`)
 })
+

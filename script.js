@@ -662,6 +662,13 @@ init()
 
 let tonConnectUI = null
 
+function toNano(ton) {
+  const v = Number(ton)
+  if (!Number.isFinite(v) || v <= 0) return null
+  return String(Math.round(v * 1e9))
+}
+
+
 function setDepositStatus(text, type = '') {
   if (!depositStatus) return
   depositStatus.textContent = text || ''
@@ -813,3 +820,4 @@ withdrawBtn?.addEventListener('click', () => alert('Вывод будет доб
 document.addEventListener('DOMContentLoaded', () => {
   initTONConnect()
 })
+

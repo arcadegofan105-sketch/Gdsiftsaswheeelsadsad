@@ -109,3 +109,30 @@ model Game {
   
   createdAt   DateTime @default(now())
 }
+
+// Депозиты TON
+model Deposit {
+  id         Int      @id @default(autoincrement())
+  userId     String
+  depositId  String   @unique
+  address    String   // Адрес для депозита
+  amount     Float    @default(0)
+  status     String   @default("pending") // pending, completed, failed
+  txHash     String?  // Хеш транзакции
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// Выводы TON
+model Withdrawal {
+  id         Int      @id @default(autoincrement())
+  userId     String
+  address    String   // Адрес для вывода
+  amount     Float
+  status     String   @default("pending") // pending, processing, completed, failed
+  txHash     String?  // Хеш транзакции
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  processedAt DateTime? // Когда обработан
+}
+

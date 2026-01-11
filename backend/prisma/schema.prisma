@@ -41,18 +41,21 @@ model Transaction {
 }
 
 model Deposit {
-  id     String  @id @default(cuid())
-  userId String
-  user   User    @relation(fields: [userId], references: [id])
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
   
-  amount      Float
-  txHash      String   @unique
-  fromAddress String
-  comment     String?
-  status      String   @default("pending") // "pending", "confirmed"
+  depositId String   @unique  // ← добавили для идентификации платежа
+  address   String             // ← адрес депозита (DEPOSIT_ADDRESS)
+  amount    Float
+  txHash    String?            // ← сделали опциональным (будет заполнен после подтверждения)
+  fromAddress String?          // ← опционально
+  comment   String?
+  status    String   @default("pending") // "pending", "completed"
   
   createdAt DateTime @default(now())
 }
+
 
 model WithdrawRequest {
   id     String  @id @default(cuid())
@@ -124,3 +127,4 @@ model Withdrawal {
   updatedAt   DateTime  @updatedAt
   processedAt DateTime? // Когда обработан
 }
+

@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 3001
 
 // ===== TELEGRAM BOT =====
 const BOT_TOKEN = process.env.BOT_TOKEN
-const WEB_APP_URL = process.env.WEB_APP_URL || 'https://wheelsgifts1.netlify.app/'
+const WEB_APP_URL = process.env.WEB_APP_URL || 'https://gdsiftsaswheeelsadsad-production.up.railway.app/'
 
 if (!BOT_TOKEN) {
   console.warn('⚠️ BOT_TOKEN не задан в .env / env. Telegram bot не будет запущен.')
@@ -648,6 +648,7 @@ app.listen(PORT, () => {
   console.log(`🚀 Backend running on http://localhost:${PORT}`)
   console.log(`🤖 Telegram Bot ${bot ? 'активен' : 'отключён (нет BOT_TOKEN)'}`)
 })
+
 
 
 

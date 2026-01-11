@@ -1,0 +1,7 @@
+tonconnect-manifest.json{
+  "url": "https://wheelsgifts.netlify.app",
+  "name": "Колесо Фортуны",
+  "iconUrl": "https://wheelsgifts.netlify.app/toncoin-ton-logo.png",
+  "termsOfUseUrl": "https://wheelsgifts.netlify.app",
+  "privacyPolicyUrl": "https://wheelsgifts.netlify.app"
+}

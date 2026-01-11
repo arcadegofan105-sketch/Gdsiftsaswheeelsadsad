@@ -18,7 +18,7 @@ const BOT_TOKEN =
 const WEB_APP_URL =
   process.env.WEB_APP_URL || 'https://wheelsgifts.netlify.app'
 const bot = new TelegramBot(BOT_TOKEN, { polling: true }
-						   )console.log('✅ Telegram Bot запущен!')
+						   console.log('✅ Telegram Bot запущен!')
 
 // Обработчик команды /start
 bot.onText(/\/start/, async msg => {
@@ -515,6 +515,7 @@ app.post(`/bot${BOT_TOKEN}`, (req, res) => {
   res.sendStatus(200)
 })
 })
+
 
 
 

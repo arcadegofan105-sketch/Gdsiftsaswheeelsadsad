@@ -513,7 +513,7 @@ app.post('/api/ton/deposit/create', async (req, res) => {
 
     await prisma.deposit.create({
       data: {
-        userId: String(userId), // telegramId
+        userId: String(userId),
         depositId,
         address: DEPOSIT_ADDRESS,
         status: 'pending',
@@ -528,11 +528,12 @@ app.post('/api/ton/deposit/create', async (req, res) => {
       payload,
       message: 'Отправьте TON на этот адрес (TonConnect) — комментарий уже встроен',
     })
-    } catch (error) {
+  } catch (error) {  // ← УБРАЛИ ЛИШНЮЮ } ПЕРЕД catch
     console.error('❌ Error creating deposit:', error)
     res.status(500).json({ error: error.message || 'Ошибка создания депозита' })
   }
 })
+
 
 // Проверить статус депозита
 app.post('/api/ton/deposit/check', async (req, res) => {
@@ -638,4 +639,5 @@ app.listen(PORT, () => {
   console.log(`🚀 Backend running on http://localhost:${PORT}`)
   console.log(`🤖 Telegram Bot ${bot ? 'активен' : 'отключён (нет BOT_TOKEN)'}`)
 })
+
 

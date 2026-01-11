@@ -961,3 +961,44 @@ body {
 		font-size: 56px;
 	}
 }
+/* ===== Deposit modal styles ===== */
+.hidden { display: none !important; }
+
+#deposit-modal .modal-content {
+  max-width: 360px;
+  width: 92%;
+  padding: 22px 18px;
+  gap: 10px;
+}
+
+#deposit-modal #deposit-amount {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: none;
+  outline: none;
+  background: rgba(15, 23, 42, 0.92);
+  color: #e5e7eb;
+  font-size: 18px;
+  font-weight: 700;
+  box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.35), 0 12px 28px rgba(0, 0, 0, 0.45);
+}
+
+#deposit-modal #deposit-amount:focus {
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.55), 0 16px 34px rgba(0, 0, 0, 0.55);
+}
+
+#deposit-modal .modal-text {
+  min-height: 20px;
+}
+
+#deposit-modal .modal-text.ok {
+  color: #22c55e;
+  opacity: 1;
+}
+
+#deposit-modal .modal-text.err {
+  color: #fca5a5;
+  opacity: 1;
+}
+

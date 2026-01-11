@@ -1002,3 +1002,25 @@ body {
   opacity: 1;
 }
 
+
+.hidden { display: none !important; }
+
+#deposit-modal .modal-text.ok { color: #22c55e; }
+#deposit-modal .modal-text.err { color: #fca5a5; }
+
+#deposit-modal #deposit-amount{
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(148,163,184,.25);
+  background: rgba(2,6,23,.7);
+  color: #e5e7eb;
+  font-size: 18px;
+  font-weight: 700;
+  outline: none;
+}
+#deposit-modal #deposit-amount::placeholder{
+  color: rgba(226,232,240,.6);
+}
+
+

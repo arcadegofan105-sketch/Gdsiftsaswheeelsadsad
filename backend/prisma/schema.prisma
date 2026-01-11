@@ -3,9 +3,10 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"  // ← было "sqlite"
   url      = env("DATABASE_URL")
 }
+
 
 model User {
   id          String   @id @default(cuid())
@@ -128,5 +129,6 @@ model Withdrawal {
   updatedAt   DateTime  @updatedAt
   processedAt DateTime? // Когда обработан
 }
+
 
 

@@ -1,5 +1,5 @@
 // ===== CONFIG =====
-const API_URL = 'https://gdsiftsaswheeelsadsad.onrender.com/api'
+const API_URL = 'gdsiftsaswheeelsadsad-production.up.railway.app'
 
 // ===== TELEGRAM INTEGRATION =====
 const tg = window.Telegram?.WebApp
@@ -820,4 +820,5 @@ withdrawBtn?.addEventListener('click', () => alert('Вывод будет доб
 document.addEventListener('DOMContentLoaded', () => {
   initTONConnect()
 })
+
 

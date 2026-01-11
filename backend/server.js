@@ -3,6 +3,7 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import pkg from '@prisma/client'
 import TelegramBot from 'node-telegram-bot-api'
+import TONService from './ton-service.js'
 
 const { PrismaClient } = pkg
 
@@ -503,8 +504,184 @@ app.post('/api/crash/play', async (req, res) => {
 	}
 })
 
+// ===== TON INTEGRATION =====
+const tonService = new TONService(false) // false = mainnet, true = testnet
+const DEPOSIT_ADDRESS = process.env.TON_DEPOSIT_ADDRESS || 'UQDpJqh-vGhIU88H19N67J_xVkW3P1Zdx3FkMuJXKX5C9Tld'
+
+// Получить баланс TON кошелька
+app.get('/api/ton/balance/:address', async (req, res) => {
+  try {
+    const { address } = req.params
+    
+    if (!tonService.validateAddress(address)) {
+      return res.status(400).json({ error: 'Неверный адрес кошелька' })
+    }
+
+    const balance = await tonService.getBalance(address)
+    const balanceInTON = tonService.fromNano(balance)
+
+    res.json({ balance: balanceInTON, address })
+  } catch (error) {
+    console.error('Error getting TON balance:', error)
+    res.status(500).json({ error: 'Ошибка получения баланса' })
+  }
+})
+
+// Создать депозит (получить адрес для пополнения)
+app.post('/api/ton/deposit/create', async (req, res) => {
+  try {
+    const { userId } = req.body
+
+    if (!userId) {
+      return res.status(400).json({ error: 'userId обязателен' })
+    }
+
+    // Генерируем уникальный комментарий для идентификации платежа
+    const depositId = `deposit_${userId}_${Date.now()}`
+
+    // Сохраняем в БД
+    await prisma.deposit.create({
+      data: {
+        userId: userId.toString(),
+        depositId,
+        address: DEPOSIT_ADDRESS,
+        status: 'pending',
+        amount: 0
+      }
+    })
+
+    res.json({
+      address: DEPOSIT_ADDRESS,
+      comment: depositId,
+      message: 'Отправьте TON на этот адрес с указанным комментарием'
+    })
+  } catch (error) {
+    console.error('Error creating deposit:', error)
+    res.status(500).json({ error: 'Ошибка создания депозита' })
+  }
+})
+
+// Проверить статус депозита
+app.post('/api/ton/deposit/check', async (req, res) => {
+  try {
+    const { depositId } = req.body
+
+    if (!depositId) {
+      return res.status(400).json({ error: 'depositId обязателен' })
+    }
+
+    const deposit = await prisma.deposit.findFirst({
+      where: { depositId }
+    })
+
+    if (!deposit) {
+      return res.status(404).json({ error: 'Депозит не найден' })
+    }
+
+    if (deposit.status === 'completed') {
+      return res.json({ status: 'completed', amount: deposit.amount })
+    }
+
+    // Проверяем транзакции
+    const tx = await tonService.checkTransaction(
+      DEPOSIT_ADDRESS,
+      0, // любая сумма
+      depositId
+    )
+
+    if (tx.found) {
+      const amountInTON = tonService.fromNano(tx.value)
+
+      // Обновляем депозит
+      await prisma.deposit.update({
+        where: { id: deposit.id },
+        data: {
+          status: 'completed',
+          amount: amountInTON,
+          txHash: tx.hash
+        }
+      })
+
+      // Добавляем баланс пользователю
+      await prisma.user.update({
+        where: { id: parseInt(deposit.userId) },
+        data: {
+          balance: {
+            increment: amountInTON
+          }
+        }
+      })
+
+      return res.json({ status: 'completed', amount: amountInTON })
+    }
+
+    res.json({ status: 'pending' })
+  } catch (error) {
+    console.error('Error checking deposit:', error)
+    res.status(500).json({ error: 'Ошибка проверки депозита' })
+  }
+})
+
+// Вывод средств
+app.post('/api/ton/withdraw', async (req, res) => {
+  try {
+    const { userId, address, amount } = req.body
+
+    if (!userId || !address || !amount) {
+      return res.status(400).json({ error: 'Все поля обязательны' })
+    }
+
+    if (!tonService.validateAddress(address)) {
+      return res.status(400).json({ error: 'Неверный адрес кошелька' })
+    }
+
+    // Проверяем баланс пользователя
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId) }
+    })
+
+    if (!user) {
+      return res.status(404).json({ error: 'Пользователь не найден' })
+    }
+
+    if (user.balance < amount) {
+      return res.status(400).json({ error: 'Недостаточно средств' })
+    }
+
+    // Создаем запрос на вывод
+    const withdrawal = await prisma.withdrawal.create({
+      data: {
+        userId: userId.toString(),
+        address,
+        amount,
+        status: 'pending'
+      }
+    })
+
+    // Списываем баланс
+    await prisma.user.update({
+      where: { id: parseInt(userId) },
+      data: {
+        balance: {
+          decrement: amount
+        }
+      }
+    })
+
+    res.json({
+      success: true,
+      withdrawalId: withdrawal.id,
+      message: 'Запрос на вывод создан, ожидайте обработки'
+    })
+  } catch (error) {
+    console.error('Error creating withdrawal:', error)
+    res.status(500).json({ error: 'Ошибка создания вывода' })
+  }
+})
+
 // ===== START SERVER =====
 app.listen(PORT, () => {
 	console.log(`🚀 Backend running on http://localhost:${PORT}`)
 	console.log(`🤖 Telegram Bot активен`)
 })
+

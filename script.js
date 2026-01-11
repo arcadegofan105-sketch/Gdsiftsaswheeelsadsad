@@ -48,7 +48,7 @@ const modalSellBtn = document.getElementById('modal-sell')
 const modalKeepBtn = document.getElementById('modal-keep')
 const inventoryList = document.getElementById('inventory-list')
 
-// deposit modal (нужно добавить в HTML)
+// deposit modal
 const depositModal = document.getElementById('deposit-modal')
 const depositAmountInput = document.getElementById('deposit-amount')
 const depositConfirmBtn = document.getElementById('deposit-confirm-btn')
@@ -657,33 +657,30 @@ window.addEventListener('resize', () => computeSectorBaseAngles())
 init()
 
 // =======================
-// TON CONNECT + DEPOSIT UI
+// TON CONNECT + DEPOSIT UI (FIXED)
 // =======================
 
 let tonConnectUI = null
 
-function toNano(ton) {
-  const v = Number(ton)
-  if (!Number.isFinite(v) || v <= 0) return null
-  return String(Math.round(v * 1e9))
-}
-
-function setDepositStatus(text) {
+function setDepositStatus(text, type = '') {
   if (!depositStatus) return
   depositStatus.textContent = text || ''
+  depositStatus.classList.remove('ok', 'err')
+  if (type) depositStatus.classList.add(type)
 }
 
 function openDepositModal() {
   if (!depositModal) return
   depositModal.classList.remove('hidden')
-  depositModal.classList.add('active') // на случай если ты используешь active
+  depositModal.classList.add('active')
   setDepositStatus('')
+  setTimeout(() => depositAmountInput?.focus(), 50)
 }
 
 function closeDepositModal() {
   if (!depositModal) return
-  depositModal.classList.add('hidden')
   depositModal.classList.remove('active')
+  depositModal.classList.add('hidden')
   setDepositStatus('')
 }
 
@@ -693,9 +690,17 @@ async function createDepositBackend() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId: TELEGRAM_ID }),
   })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data?.error || 'Ошибка создания депозита')
-  return data // { depositId, address, payload }
+
+  const raw = await res.text()
+  let data = null
+  try {
+    data = JSON.parse(raw)
+  } catch (_) {}
+
+  if (!res.ok) {
+    throw new Error((data && data.error) ? data.error : (raw || 'Ошибка создания депозита'))
+  }
+  return data
 }
 
 async function checkDepositBackend(depositId) {
@@ -704,8 +709,14 @@ async function checkDepositBackend(depositId) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ depositId }),
   })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data?.error || 'Ошибка проверки депозита')
+
+  const raw = await res.text()
+  let data = null
+  try {
+    data = JSON.parse(raw)
+  } catch (_) {}
+
+  if (!res.ok) throw new Error((data && data.error) ? data.error : (raw || 'Ошибка проверки депозита'))
   return data
 }
 
@@ -714,28 +725,22 @@ async function pollDeposit(depositId, timeoutMs = 90000, intervalMs = 2500) {
   while (Date.now() - start < timeoutMs) {
     const r = await checkDepositBackend(depositId)
     if (r?.status === 'completed') return r
-    if (r?.status === 'failed') throw new Error('Платёж не найден')
     await new Promise(resolve => setTimeout(resolve, intervalMs))
   }
   throw new Error('Долго нет подтверждения. Проверь позже.')
 }
 
 async function initTONConnect() {
-  try {
-    tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-      manifestUrl: 'https://wheelsgifts1.netlify.app/tonconnect-manifest.json',
-      buttonRootId: 'tonconnect-button', // ✅ правильный id (его надо добавить в HTML)
-    })
-
-    tonConnectUI.uiOptions = { language: 'ru' }
-
-    console.log('✅ TON Connect инициализирован')
-  } catch (error) {
-    console.error('Ошибка инициализации TON Connect:', error)
-  }
+  tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+    manifestUrl: 'https://wheelsgifts1.netlify.app/tonconnect-manifest.json',
+    buttonRootId: 'tonconnect-button',
+  })
+  tonConnectUI.uiOptions = { language: 'ru' }
 }
 
-async function handleDepositClick() {
+async function handleDepositClick(e) {
+  e?.preventDefault?.()
+
   if (!tg) {
     alert('Откройте мини-апп внутри Telegram.')
     return
@@ -746,28 +751,35 @@ async function handleDepositClick() {
     return
   }
 
-  // 1) обязателен connect
   if (!tonConnectUI.connected) {
     await tonConnectUI.openModal()
     if (!tonConnectUI.connected) return
   }
 
-  // 2) ввод суммы
   openDepositModal()
 }
 
-depositCancelBtn?.addEventListener('click', closeDepositModal)
+depositCancelBtn?.addEventListener('click', (e) => {
+  e.preventDefault()
+  closeDepositModal()
+})
 
-depositConfirmBtn?.addEventListener('click', async () => {
+depositModal?.addEventListener('click', (e) => {
+  if (e.target === depositModal) closeDepositModal()
+})
+
+depositConfirmBtn?.addEventListener('click', async (e) => {
+  e.preventDefault()
+
   try {
     const amountTon = depositAmountInput?.value
     const amountNano = toNano(amountTon)
     if (!amountNano) {
-      setDepositStatus('Введите корректную сумму TON')
+      setDepositStatus('Введите корректную сумму TON', 'err')
       return
     }
 
-    setDepositStatus('Создаём депозит...')
+    setDepositStatus('Создаём депозит...', '')
     const dep = await createDepositBackend()
 
     const address = dep.address
@@ -778,20 +790,20 @@ depositConfirmBtn?.addEventListener('click', async () => {
       throw new Error('Backend не вернул address/depositId/payload')
     }
 
-    setDepositStatus('Подтвердите транзакцию в кошельке...')
+    setDepositStatus('Подтвердите транзакцию в кошельке...', '')
     await tonConnectUI.sendTransaction({
       validUntil: Math.floor(Date.now() / 1000) + 300,
       messages: [{ address, amount: amountNano, payload }],
     })
 
-    setDepositStatus('Ждём подтверждение...')
+    setDepositStatus('Ждём подтверждение...', '')
     await pollDeposit(depositId)
 
-    setDepositStatus('✅ Зачислено!')
+    setDepositStatus('✅ Зачислено!', 'ok')
     await fetchUserData()
-    setTimeout(closeDepositModal, 1200)
-  } catch (e) {
-    setDepositStatus(e?.message || 'Ошибка депозита')
+    setTimeout(closeDepositModal, 900)
+  } catch (err) {
+    setDepositStatus(String(err?.message || 'Ошибка депозита').slice(0, 200), 'err')
   }
 })
 

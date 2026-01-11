@@ -8,42 +8,42 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  telegramId    String   @unique
-  username      String?
-  firstName     String?
-  lastName      String?
-  balance       Float    @default(5.0)
-  tonWallet     String?
-  depositMemo   String?  @unique
+  id          String   @id @default(cuid())
+  telegramId  String   @unique
+  username    String?
+  firstName   String?
+  lastName    String?
+  balance     Float    @default(5.0)
+  tonWallet   String?
+  depositMemo String?  @unique
   
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   
-  transactions  Transaction[]
-  deposits      Deposit[]
-  withdraws     WithdrawRequest[]
-  inventory     InventoryItem[]
-  promoUses     PromoRedemption[]
-  games         Game[]
+  transactions Transaction[]
+  deposits     Deposit[]
+  withdraws    WithdrawRequest[]
+  inventory    InventoryItem[]
+  promoUses    PromoRedemption[]
+  games        Game[]
 }
 
 model Transaction {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  id     String  @id @default(cuid())
+  userId String
+  user   User    @relation(fields: [userId], references: [id])
   
-  type        String   // "deposit", "withdraw", "spin", "crash_bet", "crash_win", "prize_sell"
+  type        String // "deposit", "withdraw", "spin", "crash_bet", "crash_win", "prize_sell"
   amount      Float
   description String?
   
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 model Deposit {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  id     String  @id @default(cuid())
+  userId String
+  user   User    @relation(fields: [userId], references: [id])
   
   amount      Float
   txHash      String   @unique
@@ -51,45 +51,45 @@ model Deposit {
   comment     String?
   status      String   @default("pending") // "pending", "confirmed"
   
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 model WithdrawRequest {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  id     String  @id @default(cuid())
+  userId String
+  user   User    @relation(fields: [userId], references: [id])
   
-  type        String   // "ton" или "gift"
-  amount      Float?   // для TON
-  giftName    String?  // для подарка
-  toAddress   String?  // адрес для вывода TON
+  type      String  // "ton" або "gift"
+  amount    Float?  // для TON
+  giftName  String? // для подарка
+  toAddress String? // адрес для вывода TON
   
-  status      String   @default("pending") // "pending", "approved", "rejected"
+  status String @default("pending") // "pending", "approved", "rejected"
   
-  createdAt   DateTime @default(now())
-  approvedAt  DateTime?
-  txHash      String?  // хэш транзакции после вывода
+  createdAt  DateTime  @default(now())
+  approvedAt DateTime?
+  txHash     String? // хэш транзакции после вывода
 }
 
 model InventoryItem {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  id     String  @id @default(cuid())
+  userId String
+  user   User    @relation(fields: [userId], references: [id])
   
-  name      String
-  emoji     String
-  price     Float
+  name  String
+  emoji String
+  price Float
   
   createdAt DateTime @default(now())
 }
 
 model PromoRedemption {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  id     String  @id @default(cuid())
+  userId String
+  user   User    @relation(fields: [userId], references: [id])
   
-  code      String
-  amount    Float
+  code   String
+  amount Float
   
   createdAt DateTime @default(now())
   
@@ -97,42 +97,30 @@ model PromoRedemption {
 }
 
 model Game {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  id     String  @id @default(cuid())
+  userId String
+  user   User    @relation(fields: [userId], references: [id])
   
-  type        String   // "wheel" или "crash"
-  bet         Float
-  result      Float    // выигрыш или 0
-  multiplier  Float?   // для краша
-  prize       String?  // для колеса (JSON или название)
+  type       String  // "wheel" или "crash"
+  bet        Float
+  result     Float   // выигрыш или 0
+  multiplier Float?  // для краша
+  prize      String? // для колеса (JSON или название)
   
-  createdAt   DateTime @default(now())
-}
-
-// Депозиты TON
-model Deposit {
-  id         Int      @id @default(autoincrement())
-  userId     String
-  depositId  String   @unique
-  address    String   // Адрес для депозита
-  amount     Float    @default(0)
-  status     String   @default("pending") // pending, completed, failed
-  txHash     String?  // Хеш транзакции
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
 }
 
 // Выводы TON
 model Withdrawal {
-  id         Int      @id @default(autoincrement())
-  userId     String
-  address    String   // Адрес для вывода
-  amount     Float
-  status     String   @default("pending") // pending, processing, completed, failed
-  txHash     String?  // Хеш транзакции
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id     Int     @id @default(autoincrement())
+  userId String
+  
+  address String // Адрес для вывода
+  amount  Float
+  status  String @default("pending") // pending, processing, completed, failed
+  txHash  String? // Хеш транзакции
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   processedAt DateTime? // Когда обработан
 }
-

@@ -712,3 +712,232 @@ window.addEventListener('resize', () => computeSectorBaseAngles())
 // Запуск при загрузке
 init()
 
+// ===== TON CONNECT INTEGRATION =====
+let tonConnectUI = null
+let userWalletAddress = null
+
+// Инициализация TON Connect
+async function initTONConnect() {
+    try {
+        // Создаем TON Connect UI
+        tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+            manifestUrl: 'https://wheelsgifts.netlify.app/tonconnect-manifest.json',
+            buttonRootId: 'ton-connect-button'
+        })
+
+        // Слушаем изменения статуса подключения
+        tonConnectUI.onStatusChange(wallet => {
+            if (wallet) {
+                handleWalletConnected(wallet)
+            } else {
+                handleWalletDisconnected()
+            }
+        })
+
+        // Проверяем текущее подключение
+        const currentWallet = tonConnectUI.wallet
+        if (currentWallet) {
+            handleWalletConnected(currentWallet)
+        }
+
+        console.log('✅ TON Connect инициализирован')
+    } catch (error) {
+        console.error('Ошибка инициализации TON Connect:', error)
+    }
+}
+
+// Обработка подключения кошелька
+function handleWalletConnected(wallet) {
+    userWalletAddress = wallet.account.address
+    console.log('🔗 Кошелек подключен:', userWalletAddress)
+
+    // Обновляем UI
+    const connectBtn = document.getElementById('ton-connect-button')
+    const walletInfo = document.getElementById('ton-wallet-info')
+    const tonActions = document.getElementById('ton-actions')
+    const addressSpan = document.getElementById('ton-address')
+
+    if (connectBtn) connectBtn.style.display = 'none'
+    if (walletInfo) {
+        walletInfo.style.display = 'flex'
+        if (addressSpan) {
+            addressSpan.textContent = formatAddress(userWalletAddress)
+        }
+    }
+    if (tonActions) tonActions.style.display = 'flex'
+}
+
+// Обработка отключения кошелька
+function handleWalletDisconnected() {
+    userWalletAddress = null
+    console.log('❌ Кошелек отключен')
+
+    // Обновляем UI
+    const connectBtn = document.getElementById('ton-connect-button')
+    const walletInfo = document.getElementById('ton-wallet-info')
+    const tonActions = document.getElementById('ton-actions')
+
+    if (connectBtn) connectBtn.style.display = 'block'
+    if (walletInfo) walletInfo.style.display = 'none'
+    if (tonActions) tonActions.style.display = 'none'
+}
+
+// Форматирование адреса
+function formatAddress(address) {
+    if (!address) return ''
+    return address.slice(0, 4) + '...' + address.slice(-4)
+}
+
+// Отключить кошелек
+async function disconnectWallet() {
+    if (tonConnectUI) {
+        await tonConnectUI.disconnect()
+    }
+}
+
+// Создать депозит
+async function createDeposit() {
+    try {
+        const response = await fetch(`${API_URL}/ton/deposit/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: TELEGRAM_ID })
+        })
+
+        const data = await response.json()
+
+        if (data.address && data.comment) {
+            showDepositModal(data.address, data.comment)
+            startDepositCheck(data.comment)
+        } else {
+            alert('Ошибка создания депозита')
+        }
+    } catch (error) {
+        console.error('Ошибка создания депозита:', error)
+        alert('Ошибка создания депозита')
+    }
+}
+
+// Показать модальное окно депозита
+function showDepositModal(address, comment) {
+    const modal = document.createElement('div')
+    modal.className = 'modal'
+    modal.innerHTML = `
+        <div class="modal-content">
+            <span class="close-modal" onclick="this.parentElement.parentElement.remove()">&times;</span>
+            <h2>💳 Пополнение баланса</h2>
+            <p>Отправьте TON на адрес:</p>
+            <div class="deposit-info">
+                <div class="address-box">
+                    <strong>Адрес:</strong><br>
+                    <code>${address}</code>
+                    <button onclick="copyToClipboard('${address}')">📋 Копировать</button>
+                </div>
+                <div class="comment-box">
+                    <strong>⚠️ Обязательно укажите комментарий:</strong><br>
+                    <code>${comment}</code>
+                    <button onclick="copyToClipboard('${comment}')">📋 Копировать</button>
+                </div>
+            </div>
+            <p class="warning">⏳ После отправки средства будут зачислены автоматически</p>
+            <div class="checking-status">Проверка транзакции...</div>
+        </div>
+    `
+    document.body.appendChild(modal)
+}
+
+// Проверка депозита
+function startDepositCheck(depositId) {
+    const interval = setInterval(async () => {
+        try {
+            const response = await fetch(`${API_URL}/ton/deposit/check`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ depositId })
+            })
+
+            const data = await response.json()
+
+            if (data.status === 'completed') {
+                clearInterval(interval)
+                alert(`✅ Депозит зачислен! +${data.amount} TON`)
+                document.querySelector('.modal')?.remove()
+                await fetchUserData() // Обновляем баланс
+            }
+        } catch (error) {
+            console.error('Ошибка проверки депозита:', error)
+        }
+    }, 5000) // Проверка каждые 5 секунд
+
+    // Остановить проверку через 5 минут
+    setTimeout(() => clearInterval(interval), 300000)
+}
+
+// Вывод средств
+async function withdrawTON() {
+    const address = prompt('Введите адрес TON кошелька:')
+    if (!address) return
+
+    const amount = parseFloat(prompt('Введите сумму для вывода (TON):'))
+    if (!amount || amount <= 0) {
+        alert('Неверная сумма')
+        return
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/ton/withdraw`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: TELEGRAM_ID,
+                address,
+                amount
+            })
+        })
+
+        const data = await response.json()
+
+        if (data.success) {
+            alert('✅ Запрос на вывод создан! Средства будут отправлены в течение 24 часов.')
+            await fetchUserData() // Обновляем баланс
+        } else {
+            alert(data.error || 'Ошибка вывода')
+        }
+    } catch (error) {
+        console.error('Ошибка вывода:', error)
+        alert('Ошибка вывода средств')
+    }
+}
+
+// Копировать в буфер обмена
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('✅ Скопировано в буфер обмена')
+    })
+}
+
+// Обработчики событий для TON
+document.addEventListener('DOMContentLoaded', () => {
+    // Инициализация TON Connect
+    initTONConnect()
+
+    // Кнопка отключения
+    const disconnectBtn = document.getElementById('ton-disconnect-button')
+    if (disconnectBtn) {
+        disconnectBtn.addEventListener('click', disconnectWallet)
+    }
+
+    // Кнопка пополнения
+    const depositBtn = document.getElementById('deposit-btn')
+    if (depositBtn) {
+        depositBtn.addEventListener('click', createDeposit)
+    }
+
+    // Кнопка вывода
+    const withdrawBtn = document.getElementById('withdraw-btn')
+    if (withdrawBtn) {
+        withdrawBtn.addEventListener('click', withdrawTON)
+    }
+})
+
+

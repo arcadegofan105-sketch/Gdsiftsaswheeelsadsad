@@ -1,6 +1,5 @@
 // ===== CONFIG =====
-const API_URL = 'http://localhost:3001/api'
-
+const API_URL = 'https://gdsiftsaswheeelsadsad.onrender.com/api'
 // ===== TELEGRAM INTEGRATION =====
 const tg = window.Telegram?.WebApp
 
@@ -712,3 +711,4 @@ window.addEventListener('resize', () => computeSectorBaseAngles())
 
 // Запуск при загрузке
 init()
+

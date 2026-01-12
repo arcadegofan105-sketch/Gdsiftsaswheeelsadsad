@@ -6,6 +6,9 @@ import TelegramBot from 'node-telegram-bot-api'
 import TONService from './ton-service.js'
 import { beginCell } from '@ton/core'
 import path from 'path'
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const { PrismaClient } = pkg
 
@@ -646,10 +649,11 @@ app.post('/api/ton/withdraw', async (req, res) => {
 })
 
 // ===== START SERVER =====
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend running on http://localhost:${PORT}`)
   console.log(`🤖 Telegram Bot ${bot ? 'активен' : 'отключён (нет BOT_TOKEN)'}`)
 })
+
 
 
 

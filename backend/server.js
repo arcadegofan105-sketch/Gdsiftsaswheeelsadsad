@@ -5,6 +5,7 @@ import pkg from '@prisma/client'
 import TelegramBot from 'node-telegram-bot-api'
 import TONService from './ton-service.js'
 import { beginCell } from '@ton/core'
+import path from 'path'
 
 const { PrismaClient } = pkg
 
@@ -174,6 +175,7 @@ bot?.on('message', msg => {
 // Middleware
 app.use(cors())
 app.use(express.json())
+app.use(express.static(path.join(__dirname, '..')))
 
 // ===== ROUTES =====
 
@@ -648,6 +650,7 @@ app.listen(PORT, () => {
   console.log(`🚀 Backend running on http://localhost:${PORT}`)
   console.log(`🤖 Telegram Bot ${bot ? 'активен' : 'отключён (нет BOT_TOKEN)'}`)
 })
+
 
 
 

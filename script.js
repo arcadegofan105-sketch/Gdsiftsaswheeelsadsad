@@ -664,10 +664,13 @@ let tonConnectUI = null
 
 function toNano(ton) {
   const v = Number(ton)
+  let tonConnectUI = null
+
+function toNano(ton) {
+  const v = Number(ton)
   if (!Number.isFinite(v) || v <= 0) return null
   return String(Math.round(v * 1e9))
 }
-
 
 function setDepositStatus(text, type = '') {
   if (!depositStatus) return
@@ -786,6 +789,11 @@ depositConfirmBtn?.addEventListener('click', async (e) => {
       return
     }
 
+    if (Number(amountTon) < 0.1) {
+      setDepositStatus('Минимальный депозит: 0.1 TON', 'err')
+      return
+    }
+
     setDepositStatus('Создаём депозит...', '')
     const dep = await createDepositBackend()
 
@@ -820,6 +828,3 @@ withdrawBtn?.addEventListener('click', () => alert('Вывод будет доб
 document.addEventListener('DOMContentLoaded', () => {
   initTONConnect()
 })
-
-
-
